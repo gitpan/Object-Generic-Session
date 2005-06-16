@@ -1,0 +1,6 @@
+Revision history for Object-Generic-Session
+
+0.02    June 13 2005  - debugging; added $obj->get to return false().
+0.01    June 7 2005   - project begun.  See Object::Generic
+
+
