@@ -6,7 +6,7 @@ package Object::Generic::Session;
 #
 # See the end of this file for the documentation.
 #
-# $Id: Session.pm 384 2005-06-16 15:33:29Z mahoney $
+# $Id: Session.pm 387 2005-06-17 17:40:02Z mahoney $
 #
 use strict;
 use warnings;
@@ -14,7 +14,7 @@ use base qw( Session Object::Generic );
 use Object::Generic::False qw(false);
 use Apache::Cookie;
 
-our $VERSION = 0.02;
+our $VERSION = 0.03;
 
 #
 #
@@ -35,15 +35,18 @@ sub new {
   my $cookie_name    = $args{cookie_name};
   my $expires        = $args{expires};
   my $session_config = $args{session_config};
+  my $r = Apache->request;  # See Apache::Cookie docs.
 
   # If the browser sent a cookie, get the session ID from it, and
-  # use the ID to fetch the session data from the database.
-  # Otherwise, if we didn't get a cookie, start a new session.
-  # Send back a cookie regardless.
+  # use that ID to fetch the session data from the database.
+  # If we didn't get a cookie, or if the matching session 
+  # can't be found in the database, start a new session.
+  # Tell Apache to set a cookie in the HTTPD headers with the session ID regardless.
   my $cookies      = Apache::Cookie->fetch;
   my $cookie       = $cookies ? $cookies->{$cookie_name} : undef;
   my $cookie_value = $cookie  ? $cookie->value           : undef;
-  my $self         = Session->new($cookie_value, %$session_config);
+  my $self         = Session->new($cookie_value, %$session_config)
+                     || Session->new(undef, %$session_config);
   Apache::Cookie->new($r,
        -name    =>  $cookie_name,
        -value   =>  $self->session_id,
@@ -61,7 +64,7 @@ sub get {
   my $self = shift;
   my ($key) = @_;
   return false unless $self->exists($key);
-  return self->SUPER::get($key);
+  return $self->SUPER::get($key);
 }
 
 1;
