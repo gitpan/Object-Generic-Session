@@ -5,16 +5,16 @@ package Object::Generic::Session;
 # consistent with Object::Generic and Class::DBI.
 #
 # See the end of this file for the documentation.
-#
-# $Id: Session.pm 387 2005-06-17 17:40:02Z mahoney $
-#
+#  
+# $Id: Session.pm 402 2005-08-19 22:01:37Z mahoney $    
+
 use strict;
 use warnings;
 use base qw( Session Object::Generic );
 use Object::Generic::False qw(false);
 use Apache::Cookie;
 
-our $VERSION = 0.03;
+our $VERSION = 0.1;
 
 #
 #
@@ -32,21 +32,31 @@ our $VERSION = 0.03;
 sub new {
   my $class = shift;
   my %args  = @_;
-  my $cookie_name    = $args{cookie_name};
-  my $expires        = $args{expires};
-  my $session_config = $args{session_config};
+  my $cookie_name    = $args{cookie_name}
+    or return "Oops - 'cookie_name' not defined.";
+  my $expires        = $args{expires}         || '+8h'
+    or return "Oops - 'expires' not defined.";
+  my $path           = $args{path}            || '/';
+  my $session_config = $args{session_config}
+    or return "Oops - no session_config given.";
   my $r = Apache->request;  # See Apache::Cookie docs.
 
   # If the browser sent a cookie, get the session ID from it, and
   # use that ID to fetch the session data from the database.
   # If we didn't get a cookie, or if the matching session 
   # can't be found in the database, start a new session.
-  # Tell Apache to set a cookie in the HTTPD headers with the session ID regardless.
+  # Tell Apache to set a cookie in the HTTPD headers with 
+  # the session ID regardless.
   my $cookies      = Apache::Cookie->fetch;
   my $cookie       = $cookies ? $cookies->{$cookie_name} : undef;
   my $cookie_value = $cookie  ? $cookie->value           : undef;
   my $self         = Session->new($cookie_value, %$session_config)
                      || Session->new(undef, %$session_config);
+  if (not $self){
+    return 'Oops: unable to create a session with given session_config.';
+  }
+  $self->set('__access__count' => 0)  # increments each request; see DESTROY
+    unless $self->get('__access_count');
   Apache::Cookie->new($r,
        -name    =>  $cookie_name,
        -value   =>  $self->session_id,
@@ -67,13 +77,29 @@ sub get {
   return $self->SUPER::get($key);
 }
 
+# This fixes what seemed like a bug to me in how sessions were handled.
+#
+# If data within the session, say $session->foo->bar->baz 
+# change without anything in $session->{} itself changing, 
+# Session.pm won't know that the session needs to be written
+# back out to the database, and thus the changes may not be saved.
+#
+# So, I force any 'set' operation to mark this session as modified.
+# I'm not sure why this isn't the default.
+# See Apache::Session's code for this make_modified routine.
+sub set {
+  my $self = shift;
+  $self->make_modified();
+  return $self->SUPER::set(@_);
+}
+
 1;
 
 __END__
 
 =head1 NAME
 
-Object::Generic::Session - a web application session with an interface like Class::DBI.
+Object::Generic::Session - an apache session with an interface like Class::DBI.
 
 =head1 SYNOPSIS
 
