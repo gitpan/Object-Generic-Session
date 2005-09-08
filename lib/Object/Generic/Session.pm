@@ -6,7 +6,7 @@ package Object::Generic::Session;
 #
 # See the end of this file for the documentation.
 #  
-# $Id: Session.pm 402 2005-08-19 22:01:37Z mahoney $    
+# $Id: Session.pm 403 2005-09-08 20:17:37Z mahoney $    
 
 use strict;
 use warnings;
@@ -14,9 +14,8 @@ use base qw( Session Object::Generic );
 use Object::Generic::False qw(false);
 use Apache::Cookie;
 
-our $VERSION = 0.1;
+our $VERSION = 0.11;
 
-#
 #
 # Usage:  $session = new Object::Generic::Session(
 #   session_config  => 
@@ -55,8 +54,13 @@ sub new {
   if (not $self){
     return 'Oops: unable to create a session with given session_config.';
   }
-  $self->set('__access__count' => 0)  # increments each request; see DESTROY
-    unless $self->get('__access_count');
+  ## May be used to count invocations for debuggin.
+  # if ($self->get('__access_count'){
+  #   $self->set('__access_count' => 1+$self->get('__access_count'))
+  # }
+  # else {
+  #   $self->set('__access__count' => 0);
+  # }
   Apache::Cookie->new($r,
        -name    =>  $cookie_name,
        -value   =>  $self->session_id,
