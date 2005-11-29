@@ -1,6 +1,9 @@
 Revision history for Object-Generic-Session
 
-0.11    Sep 9
+0.12    Nov 29 2005
+	  fixed bug with 'expires', ignored passed value
+
+0.11    Sep 9 2005
 	  commented out __access_count code.
 
 0.1     Aug  19 2005

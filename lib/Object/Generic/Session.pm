@@ -6,7 +6,7 @@ package Object::Generic::Session;
 #
 # See the end of this file for the documentation.
 #  
-# $Id: Session.pm 403 2005-09-08 20:17:37Z mahoney $    
+# $Id: Session.pm 404 2005-11-29 19:53:19Z mahoney $    
 
 use strict;
 use warnings;
@@ -14,7 +14,7 @@ use base qw( Session Object::Generic );
 use Object::Generic::False qw(false);
 use Apache::Cookie;
 
-our $VERSION = 0.11;
+our $VERSION = 0.12;
 
 #
 # Usage:  $session = new Object::Generic::Session(
@@ -31,13 +31,12 @@ our $VERSION = 0.11;
 sub new {
   my $class = shift;
   my %args  = @_;
-  my $cookie_name    = $args{cookie_name}
-    or return "Oops - 'cookie_name' not defined.";
-  my $expires        = $args{expires}         || '+8h'
-    or return "Oops - 'expires' not defined.";
-  my $path           = $args{path}            || '/';
   my $session_config = $args{session_config}
     or return "Oops - no session_config given.";
+  my $cookie_name    = $args{cookie_name}
+    or return "Oops - 'cookie_name' not defined.";
+  my $expires        = $args{expires}         || '+8h';
+  my $path           = $args{path}            || '/';
   my $r = Apache->request;  # See Apache::Cookie docs.
 
   # If the browser sent a cookie, get the session ID from it, and
@@ -64,8 +63,8 @@ sub new {
   Apache::Cookie->new($r,
        -name    =>  $cookie_name,
        -value   =>  $self->session_id,
-       -expires =>  '+8h',
-       -path    =>  '/',
+       -expires =>  $expires,
+       -path    =>  $path,
      )->bake;
   return bless $self, $class;
 }
